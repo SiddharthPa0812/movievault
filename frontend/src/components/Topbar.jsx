@@ -35,7 +35,7 @@ function Topbar({ query, onQueryChange, onToggleMenu, title, subtitle, user, onL
             )}
             <div>
               <strong>{user.name}</strong>
-              <small>{user.email}</small>
+              <small>@{user.username || user.email}</small>
             </div>
             <button type="button" className="icon-button" onClick={onLogout} aria-label="Logout">
               <LogOut size={16} />

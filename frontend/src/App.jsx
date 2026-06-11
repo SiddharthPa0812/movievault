@@ -12,7 +12,6 @@ import LoginPage from "./pages/LoginPage";
 import ManageEntryPage from "./pages/ManageEntryPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import StatisticsPage from "./pages/StatisticsPage";
-import { decodeJwt, loadGoogleScript } from "./utils/googleAuth";
 
 const routeMeta = {
   "/": {
@@ -48,35 +47,60 @@ function App() {
   const [bootError, setBootError] = useState("");
   const [authUser, setAuthUser] = useState(() => {
     const saved = window.localStorage.getItem("movievault-user");
-    return saved ? JSON.parse(saved) : null;
+    const token = window.localStorage.getItem("movievault-token");
+    return saved && token ? JSON.parse(saved) : null;
   });
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+  const [authChecking, setAuthChecking] = useState(() => Boolean(window.localStorage.getItem("movievault-token")));
 
-  const handleGoogleCredential = ({ credential }) => {
-    const profile = decodeJwt(credential);
-    if (!profile) return;
+  const persistSession = (user) => {
+    const { token, ...profile } = user;
+    if (token) {
+      window.localStorage.setItem("movievault-token", token);
+    }
+    window.localStorage.setItem("movievault-user", JSON.stringify(profile));
+    setAuthUser(profile);
+  };
 
-    const user = {
-      name: profile.name,
-      email: profile.email,
-      picture: profile.picture,
-    };
+  const clearSession = () => {
+    window.localStorage.removeItem("movievault-user");
+    window.localStorage.removeItem("movievault-token");
+    setAuthUser(null);
+    setCategoryData(null);
+  };
 
-    window.localStorage.setItem("movievault-user", JSON.stringify(user));
-    setAuthUser(user);
+  const handleLogin = (user) => {
+    persistSession(user);
   };
 
   const handleLogout = async () => {
-    window.localStorage.removeItem("movievault-user");
-    setAuthUser(null);
-
     try {
-      const google = await loadGoogleScript();
-      google?.accounts?.id?.disableAutoSelect();
+      await api.post("/auth/logout/");
     } catch {
       // no-op
     }
+    clearSession();
   };
+
+  useEffect(() => {
+    const token = window.localStorage.getItem("movievault-token");
+    if (!token) {
+      setAuthChecking(false);
+      return;
+    }
+
+    api
+      .get("/auth/me/")
+      .then(({ data }) => {
+        window.localStorage.setItem("movievault-user", JSON.stringify(data.user));
+        setAuthUser(data.user);
+      })
+      .catch(() => {
+        clearSession();
+      })
+      .finally(() => {
+        setAuthChecking(false);
+      });
+  }, []);
 
   useEffect(() => {
     if (!authUser) return;
@@ -87,7 +111,7 @@ function App() {
         .get("/entries/categories/")
         .then(({ data }) => setCategoryData(data))
         .catch(() => {
-          setBootError("MovieVault can't reach the Django API. Make sure the backend server is still running on http://127.0.0.1:8000.");
+          setBootError("MovieVault can't reach the API. Check that the backend is running and VITE_API_BASE_URL is configured.");
         });
     };
 
@@ -113,8 +137,15 @@ function App() {
     document.title = `${meta.title} | MovieVault`;
   }, [meta]);
 
+  if (authChecking) return <LoadingSpinner label="Restoring your session..." />;
+
   if (!authUser) {
-    return <LoginPage onCredential={handleGoogleCredential} googleClientId={googleClientId} />;
+    return (
+      <Routes>
+        <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
   }
 
   if (bootError) {

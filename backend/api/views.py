@@ -4,8 +4,10 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from .authentication import AppUserTokenAuthentication
 from .filters import EntryFilter
 from .models import Entry
+from .permissions import IsAuthenticatedAppUser
 from .serializers import EntrySerializer
 
 MOVIE_CATEGORY_META = [
@@ -28,12 +30,19 @@ ANIME_CATEGORY_META = [
 
 
 class EntryViewSet(viewsets.ModelViewSet):
-    queryset = Entry.objects.all()
     serializer_class = EntrySerializer
     filterset_class = EntryFilter
     search_fields = ["title", "genre", "review", "category"]
     ordering_fields = ["watched_date", "created_at", "rating", "title"]
     ordering = ["-watched_date", "-created_at"]
+    authentication_classes = [AppUserTokenAuthentication]
+    permission_classes = [IsAuthenticatedAppUser]
+
+    def get_queryset(self):
+        return Entry.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
     @action(detail=False, methods=["get"])
     def dashboard(self, request):
@@ -64,13 +73,14 @@ class EntryViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def categories(self, request):
+        user_entries = Entry.objects.filter(user=request.user)
         movie_counts = {
             row["category"]: row["total"]
-            for row in Entry.objects.filter(type=Entry.EntryType.MOVIE).values("category").annotate(total=Count("id"))
+            for row in user_entries.filter(type=Entry.EntryType.MOVIE).values("category").annotate(total=Count("id"))
         }
         anime_counts = {
             row["category"]: row["total"]
-            for row in Entry.objects.filter(type=Entry.EntryType.ANIME).values("category").annotate(total=Count("id"))
+            for row in user_entries.filter(type=Entry.EntryType.ANIME).values("category").annotate(total=Count("id"))
         }
         data = {
             "movie_categories": [
@@ -88,5 +98,5 @@ class EntryViewSet(viewsets.ModelViewSet):
         field = request.data.get("field")
         if field not in {"is_favorite", "in_watchlist"}:
             return Response({"detail": "Invalid field."}, status=status.HTTP_400_BAD_REQUEST)
-        updated = Entry.objects.filter(id__in=ids).update(**{field: request.data.get("value", False)})
+        updated = self.get_queryset().filter(id__in=ids).update(**{field: request.data.get("value", False)})
         return Response({"updated": updated})
