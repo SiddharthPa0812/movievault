@@ -1,0 +1,32 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cinevaultGradient" x1="18" y1="18" x2="108" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4E7FF"/>
+      <stop offset="0.35" stop-color="#C869FF"/>
+      <stop offset="0.7" stop-color="#8B3DFF"/>
+      <stop offset="1" stop-color="#5B9CFF"/>
+    </linearGradient>
+    <linearGradient id="cinevaultPanel" x1="22" y1="26" x2="104" y2="106" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2A0E4E"/>
+      <stop offset="1" stop-color="#120A2A"/>
+    </linearGradient>
+    <filter id="glow" x="0" y="0" width="128" height="128" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.55 0 1 0 0 0.2 0 0 1 0 1 0 0 0 0.8 0"/>
+      <feBlend in="SourceGraphic" mode="screen"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#glow)">
+    <path d="M33 31L90 15C94 14 98 16 99 20L101 30C102 34 100 38 96 39L39 55C35 56 31 54 30 50L28 40C27 36 29 32 33 31Z" fill="url(#cinevaultGradient)"/>
+    <path d="M28 41H96C100 41 103 44 103 48V83C103 92 96 99 87 99H41C32 99 25 92 25 83V48C25 44 24 41 28 41Z" fill="url(#cinevaultPanel)" stroke="url(#cinevaultGradient)" stroke-width="3"/>
+    <circle cx="55" cy="71" r="21" stroke="url(#cinevaultGradient)" stroke-width="4"/>
+    <path d="M49 60.5V81.5L67 71L49 60.5Z" fill="#F9F0FF"/>
+    <circle cx="83.5" cy="61.5" r="6.5" fill="url(#cinevaultGradient)"/>
+    <circle cx="79.5" cy="78.5" r="7.5" fill="url(#cinevaultGradient)"/>
+    <circle cx="95" cy="75" r="9" fill="url(#cinevaultGradient)"/>
+    <path d="M38 31L92 18" stroke="#F9F0FF" stroke-opacity="0.7" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M49 25L60 18" stroke="#F9F0FF" stroke-opacity="0.65" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M64 21L75 14" stroke="#F9F0FF" stroke-opacity="0.65" stroke-width="2.6" stroke-linecap="round"/>
+  </g>
+</svg>
